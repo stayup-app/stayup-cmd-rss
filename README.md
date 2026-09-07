@@ -7,7 +7,7 @@
 
 Monitors RSS feeds and stores the latest entries via [stayup-api](https://github.com/stayup-app/stayup-api) — this script never touches a database directly, it only calls `stayup-api`'s `/connector-api/rss/*` endpoints.
 
-For each tracked feed, the script fetches the most recent entries using feedparser. A new entry is only stored when its GUID has changed since the last run, up to `max_entries` (default 5) per run. Entries older than `retention_days` (default 15) are cleaned up each run.
+For each tracked feed, the script fetches the most recent entries using feedparser. A new entry is only stored when its GUID has changed since the last run, up to `max_entries` (default 5) per run. Old content is pruned by `stayup-api` itself — retention is an instance-wide setting an admin manages, not this connector's job.
 
 ## Requirements
 

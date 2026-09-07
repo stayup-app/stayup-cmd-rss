@@ -5,8 +5,7 @@ Stayup — monitors RSS feeds and stores the latest entries via stayup-api.
 For each tracked repository of type 'rss', the script fetches the most recent
 entries using feedparser. On first run the latest article is stored. On
 subsequent runs all new articles (up to config["max_entries"], default 5) are stored
-until the already-known entry is reached. Entries older than config["retention_days"]
-(default 15 days) are cleaned up each run.
+until the already-known entry is reached.
 
 Talks to stayup-api over HTTP (STAYUP_API_URL + STAYUP_API_KEY) — it never
 touches a database directly. See stayup-api/docs/self-hosting-and-providers.md.
@@ -38,7 +37,6 @@ API_URL = os.environ.get("STAYUP_API_URL", "http://localhost:3000").rstrip("/")
 API_KEY = os.environ.get("STAYUP_API_KEY")
 
 DEFAULT_MAX_ENTRIES = 5
-DEFAULT_RETENTION_DAYS = 15
 
 # Manifeste d'affichage : comment les 3 apps (ui / desktop / mobile) rendent les
 # lignes de ce connecteur, sans une ligne de code côté app. stayup-api le relaie
@@ -176,15 +174,6 @@ def save_entries(repository_id: int, entries: list[dict], executed_at: datetime)
     api_request("POST", "/items", json={"items": items})
 
 
-def cleanup_old_entries(repository_id: int, retention_days: int) -> None:
-    """Delete stored entries for a repository older than retention_days days."""
-    api_request(
-        "DELETE",
-        f"/sources/{repository_id}/old-items",
-        params={"retentionDays": retention_days},
-    )
-
-
 def save_error(repository_id: int | None, error: str, executed_at: datetime) -> None:
     """Persist a retrieval error."""
     api_request(
@@ -308,7 +297,6 @@ def main() -> None:
 
     for repository_id, repository_url, config in sources:
         process_repository(repository_id, repository_url, executed_at, config)
-        cleanup_old_entries(repository_id, config.get("retention_days", DEFAULT_RETENTION_DAYS))
 
 
 if __name__ == "__main__":

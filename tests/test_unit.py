@@ -12,7 +12,6 @@ import pytest
 from fetch_rss import (
     DISPLAY_TEMPLATE,
     add_source,
-    cleanup_old_entries,
     fetch_feed,
     get_latest_version,
     get_sources,
@@ -173,18 +172,6 @@ class TestSaveFeedTitle:
         assert method == "PATCH"
         assert url.endswith("/connector-api/rss/sources/7/config")
         assert mock_request.call_args.kwargs["json"] == {"config": {"title": "Le blog de Stéphane Robert"}}
-
-
-@patch("fetch_rss.API_KEY", "test-key")
-class TestCleanupOldEntries:
-    @patch("fetch_rss.requests.request")
-    def test_sends_retention_days_as_a_query_param(self, mock_request):
-        mock_request.return_value = mock_response({"success": True})
-        cleanup_old_entries(7, 30)
-        method, url = mock_request.call_args[0]
-        assert method == "DELETE"
-        assert url.endswith("/connector-api/rss/sources/7/old-items")
-        assert mock_request.call_args.kwargs["params"] == {"retentionDays": 30}
 
 
 class TestDisplayTemplate:
