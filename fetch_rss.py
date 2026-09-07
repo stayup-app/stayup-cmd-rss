@@ -24,32 +24,32 @@ import requests
 
 PROVIDER_TYPE = "rss"
 
-# Nom affiché du provider dans les apps (fallback : nom de table capitalisé).
+# Display name of the provider in the apps (fallback: capitalized table name).
 DISPLAY_NAME = "RSS"
 
-# Où ce connecteur se classe parmi les autres dans la barre latérale.
+# Where this connector ranks among the others in the sidebar.
 SORT_ORDER = 30
 
-# Instance stayup-api à laquelle parler, et la clé qui authentifie ce
-# connecteur pour le provider 'rss' — obtenue depuis l'admin de cette
-# instance (voir stayup-api/docs/self-hosting-and-providers.md).
+# The stayup-api instance to talk to, and the key that authenticates this
+# connector for the 'rss' provider — obtained from that instance's admin
+# (see stayup-api/docs/self-hosting-and-providers.md).
 API_URL = os.environ.get("STAYUP_API_URL", "http://localhost:3000").rstrip("/")
 API_KEY = os.environ.get("STAYUP_API_KEY")
 
 DEFAULT_MAX_ENTRIES = 5
 
-# Manifeste d'affichage : comment les 3 apps (ui / desktop / mobile) rendent les
-# lignes de ce connecteur, sans une ligne de code côté app. stayup-api le relaie
-# tel quel depuis provider_registry.template, sans jamais l'interpréter.
-# Schéma : voir stayup-api/docs/self-hosting-and-providers.md.
+# Display manifest: how the 3 apps (ui / desktop / mobile) render this
+# connector's rows, without a line of code on the app side. stayup-api relays it
+# as-is from provider_registry.template, without ever interpreting it.
+# Schema: see stayup-api/docs/self-hosting-and-providers.md.
 #
-# Une entrée = un item de connector_item. `content` est un JSON
-# {title, link, summary}, `summary` étant du HTML (mode "html").
+# One entry = a connector_item row. `content` is JSON {title, link, summary},
+# `summary` being HTML (`html` mode).
 DISPLAY_TEMPLATE = {
     "version": 1,
     "display": {
         "name": DISPLAY_NAME,
-        # Icône auto-descriptive (tracé SVG teintable). Ondes RSS + point.
+        # Self-describing icon (tintable SVG path). RSS waves + dot.
         "icon": {
             "paths": [
                 "M4 11a9 9 0 0 1 9 9",
@@ -61,8 +61,8 @@ DISPLAY_TEMPLATE = {
         },
         "accent": "#a8d4b5",
         "sortOrder": SORT_ORDER,
-        # Libellé du flux : le titre du canal quand le collecteur l'a stocké
-        # (repository.config.title), sinon le domaine de l'URL.
+        # Flux label: the channel title when the collector stored it
+        # (repository.config.title), otherwise the URL's domain.
         "feedLabel": [
             {"path": "$source.config.title"},
             {"path": "$source.url", "format": "domain"},
@@ -123,7 +123,7 @@ def api_request(method: str, path: str, **kwargs) -> dict | None:
 
 
 def register_provider() -> None:
-    """Auto-déclaration au démarrage — nom affiché et manifeste d'affichage."""
+    """Self-declaration at startup — display name and display manifest."""
     api_request(
         "POST",
         "/register",
@@ -247,8 +247,8 @@ def process_repository(repository_id: int, repository_url: str, executed_at: dat
         if not entries:
             raise RuntimeError("No entry found.")
 
-        # Garde `repository.config.title` à jour pour le libellé du flux (le
-        # template retombe sur le domaine de l'URL quand il est absent).
+        # Keeps `repository.config.title` up to date for the flux label (the
+        # template falls back to the URL's domain when it is absent).
         if feed_title and feed_title != config.get("title"):
             save_feed_title(repository_id, feed_title)
 

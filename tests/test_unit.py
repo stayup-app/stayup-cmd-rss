@@ -179,8 +179,8 @@ class TestDisplayTemplate:
         assert json.loads(json.dumps(DISPLAY_TEMPLATE)) == DISPLAY_TEMPLATE
 
     def test_ships_a_self_describing_icon(self):
-        # Le connecteur fournit son icône (tracé SVG teintable), pas une clé du
-        # jeu intégré des apps : un nouveau connecteur s'affiche sans toucher au code.
+        # The connector provides its own icon (tintable SVG path), not a key of
+        # the apps' built-in set: a new connector renders without touching code.
         icon = DISPLAY_TEMPLATE["display"]["icon"]
         assert isinstance(icon, dict)
         assert icon["paths"]
