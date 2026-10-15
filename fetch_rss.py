@@ -38,68 +38,6 @@ API_KEY = os.environ.get("STAYUP_API_KEY")
 
 DEFAULT_MAX_ENTRIES = 5
 
-# Display manifest: how the 3 apps (ui / desktop / mobile) render this
-# connector's rows, without a line of code on the app side. stayup-api relays it
-# as-is from provider_registry.template, without ever interpreting it.
-# Schema: see stayup-api/docs/self-hosting-and-providers.md.
-#
-# One entry = a connector_item row. `content` is JSON {title, link, summary},
-# `summary` being HTML (`html` mode).
-DISPLAY_TEMPLATE = {
-    "version": 1,
-    "display": {
-        "name": DISPLAY_NAME,
-        # Self-describing icon (tintable SVG path). RSS waves + dot.
-        "icon": {
-            "paths": [
-                "M4 11a9 9 0 0 1 9 9",
-                "M4 4a16 16 0 0 1 16 16",
-                "M6 19a1 1 0 0 1-2 0 1 1 0 0 1 2 0z",
-            ],
-            "viewBox": "0 0 24 24",
-            "stroke": True,
-        },
-        "accent": "#a8d4b5",
-        "sortOrder": SORT_ORDER,
-        # Flux label: the channel title when the collector stored it
-        # (repository.config.title), otherwise the URL's domain.
-        "feedLabel": [
-            {"path": "$source.config.title"},
-            {"path": "$source.url", "format": "domain"},
-        ],
-    },
-    "item": {
-        "parseContentAsJson": True,
-        "fields": {
-            "title": "title",
-            "subtitle": {"path": "link", "format": "hostname"},
-            "summary": "summary",
-            "url": "link",
-            "timestamp": "$row.datetime",
-        },
-    },
-    "list": {
-        "layout": "row",
-        "primary": "title",
-        "secondary": "subtitle",
-        "meta": "timestamp",
-    },
-    "detail": {
-        "mode": "html",
-        "title": "title",
-        "subtitle": {"path": "link", "format": "hostname"},
-        "body": "summary",
-        "openUrl": "link",
-        "openLabel": "Read article",
-    },
-    "form": {
-        "label": "RSS/Atom feed URL",
-        "placeholder": "https://blog.example.com/feed.xml",
-        "pattern": r"^https?://.+",
-        "transform": {"trim": True},
-    },
-}
-
 
 # ---------------------------------------------------------------------------
 # stayup-api client
@@ -123,14 +61,13 @@ def api_request(method: str, path: str, **kwargs) -> dict | None:
 
 
 def register_provider() -> None:
-    """Self-declaration at startup — display name and display manifest."""
+    """Self-declaration at startup — display name and sort order."""
     api_request(
         "POST",
         "/register",
         json={
             "displayName": DISPLAY_NAME,
             "sortOrder": SORT_ORDER,
-            "template": DISPLAY_TEMPLATE,
         },
     )
 

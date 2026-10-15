@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from fetch_rss import (
-    DISPLAY_TEMPLATE,
     add_source,
     fetch_feed,
     get_latest_version,
@@ -39,7 +38,7 @@ def mock_response(json_body=None, status=200):
 @patch("fetch_rss.API_KEY", "test-key")
 class TestRegisterProvider:
     @patch("fetch_rss.requests.request")
-    def test_posts_display_name_sort_order_and_template(self, mock_request):
+    def test_posts_display_name_and_sort_order(self, mock_request):
         mock_request.return_value = mock_response()
         register_provider()
         method, url = mock_request.call_args[0]
@@ -48,7 +47,6 @@ class TestRegisterProvider:
         body = mock_request.call_args.kwargs["json"]
         assert body["displayName"] == "RSS"
         assert body["sortOrder"] == 30
-        assert body["template"] == DISPLAY_TEMPLATE
 
     @patch("fetch_rss.requests.request")
     def test_sends_the_bearer_token(self, mock_request):
@@ -172,31 +170,6 @@ class TestSaveFeedTitle:
         assert method == "PATCH"
         assert url.endswith("/connector-api/rss/sources/7/config")
         assert mock_request.call_args.kwargs["json"] == {"config": {"title": "Le blog de Stéphane Robert"}}
-
-
-class TestDisplayTemplate:
-    def test_round_trips_through_json_unchanged(self):
-        assert json.loads(json.dumps(DISPLAY_TEMPLATE)) == DISPLAY_TEMPLATE
-
-    def test_ships_a_self_describing_icon(self):
-        # The connector provides its own icon (tintable SVG path), not a key of
-        # the apps' built-in set: a new connector renders without touching code.
-        icon = DISPLAY_TEMPLATE["display"]["icon"]
-        assert isinstance(icon, dict)
-        assert icon["paths"]
-        assert all(p[:1] in ("M", "m") for p in icon["paths"])
-        assert icon["viewBox"] == "0 0 24 24"
-
-    def test_html_detail_reads_summary_from_content(self):
-        assert DISPLAY_TEMPLATE["detail"]["mode"] == "html"
-        assert DISPLAY_TEMPLATE["detail"]["body"] == "summary"
-        assert DISPLAY_TEMPLATE["item"]["parseContentAsJson"] is True
-
-    def test_feed_label_prefers_the_stored_channel_title_then_the_domain(self):
-        label = DISPLAY_TEMPLATE["display"]["feedLabel"]
-        assert isinstance(label, list)
-        assert label[0] == {"path": "$source.config.title"}
-        assert label[1] == {"path": "$source.url", "format": "domain"}
 
 
 # ---------------------------------------------------------------------------
