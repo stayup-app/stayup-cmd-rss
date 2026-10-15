@@ -17,7 +17,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import feedparser
 import requests
@@ -135,7 +135,7 @@ def _parse_entry(raw_entry) -> dict:
     published_parsed = raw_entry.get("published_parsed")
     if published_parsed:
         try:
-            published = datetime(*published_parsed[:6], tzinfo=timezone.utc)
+            published = datetime(*published_parsed[:6], tzinfo=UTC)
         except Exception:
             pass
 
@@ -225,7 +225,7 @@ def main() -> None:
         print(f"Repository added: {args.add}")
         return
 
-    executed_at = datetime.now(tz=timezone.utc)
+    executed_at = datetime.now(tz=UTC)
     sources = get_sources()
 
     if not sources:

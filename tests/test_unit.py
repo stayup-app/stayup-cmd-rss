@@ -4,7 +4,7 @@ by stayup-api's own test suite. Network access (feedparser) is mocked too."""
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -117,7 +117,7 @@ class TestSaveEntries:
             {"version": "guid-1", "title": "T1", "link": "https://x/1", "summary": "s1", "published": None},
             {"version": "guid-2", "title": "T2", "link": "https://x/2", "summary": "s2", "published": None},
         ]
-        save_entries(1, entries, datetime(2026, 1, 1, tzinfo=timezone.utc))
+        save_entries(1, entries, datetime(2026, 1, 1, tzinfo=UTC))
         assert mock_request.call_count == 1
         body = mock_request.call_args.kwargs["json"]
         assert len(body["items"]) == 2
@@ -127,17 +127,17 @@ class TestSaveEntries:
 
     @patch("fetch_rss.requests.request")
     def test_does_nothing_on_an_empty_batch(self, mock_request):
-        save_entries(1, [], datetime.now(tz=timezone.utc))
+        save_entries(1, [], datetime.now(tz=UTC))
         mock_request.assert_not_called()
 
     @patch("fetch_rss.requests.request")
     def test_serializes_the_published_date(self, mock_request):
         mock_request.return_value = mock_response({"success": True})
-        entry_date = datetime(2024, 6, 15, tzinfo=timezone.utc)
+        entry_date = datetime(2024, 6, 15, tzinfo=UTC)
         save_entries(
             1,
             [{"version": "g", "title": "T", "link": "l", "summary": "s", "published": entry_date}],
-            datetime.now(tz=timezone.utc),
+            datetime.now(tz=UTC),
         )
         body = mock_request.call_args.kwargs["json"]
         assert body["items"][0]["datetime"] == entry_date.isoformat()
@@ -148,7 +148,7 @@ class TestSaveError:
     @patch("fetch_rss.requests.request")
     def test_posts_the_error(self, mock_request):
         mock_request.return_value = mock_response({"success": True})
-        executed_at = datetime.now(tz=timezone.utc)
+        executed_at = datetime.now(tz=UTC)
         save_error(5, "something went wrong", executed_at)
         body = mock_request.call_args.kwargs["json"]
         assert body == {"repositoryId": 5, "error": "something went wrong", "executedAt": executed_at.isoformat()}
@@ -156,7 +156,7 @@ class TestSaveError:
     @patch("fetch_rss.requests.request")
     def test_accepts_none_repository_id(self, mock_request):
         mock_request.return_value = mock_response({"success": True})
-        save_error(None, "error", datetime.now(tz=timezone.utc))
+        save_error(None, "error", datetime.now(tz=UTC))
         assert mock_request.call_args.kwargs["json"]["repositoryId"] is None
 
 
@@ -243,7 +243,7 @@ class TestFetchFeed:
         entry = _make_entry(id="guid-1", published_parsed=published_parsed)
         mock_parse.return_value = _parsed([entry])
         _, result = fetch_feed("https://example.com/feed.xml")
-        assert result[0]["published"] == datetime(2024, 6, 15, 0, 0, 0, tzinfo=timezone.utc)
+        assert result[0]["published"] == datetime(2024, 6, 15, 0, 0, 0, tzinfo=UTC)
 
     @patch("fetch_rss.feedparser.parse")
     def test_handles_missing_id_falls_back_to_link(self, mock_parse):
@@ -286,7 +286,7 @@ class TestProcessRepository:
             ],
         )
         mock_get_latest.return_value = None
-        executed_at = datetime.now(tz=timezone.utc)
+        executed_at = datetime.now(tz=UTC)
         process_repository(1, "https://example.com/feed.xml", executed_at, {})
 
         mock_save.assert_called_once()
@@ -305,7 +305,7 @@ class TestProcessRepository:
             [{"version": "guid-001", "title": "T", "link": "l", "summary": "", "published": None}],
         )
         mock_get_latest.return_value = "guid-001"
-        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {})
+        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=UTC), {})
 
         _, entries, _ = mock_save.call_args[0]
         assert entries == []
@@ -324,7 +324,7 @@ class TestProcessRepository:
             ],
         )
         mock_get_latest.return_value = "guid-001"
-        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {})
+        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=UTC), {})
 
         _, entries, _ = mock_save.call_args[0]
         assert [e["version"] for e in entries] == ["guid-003", "guid-002"]
@@ -342,7 +342,7 @@ class TestProcessRepository:
             ],
         )
         mock_get_latest.return_value = "guid-not-found"
-        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {})
+        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=UTC), {})
 
         _, entries, _ = mock_save.call_args[0]
         assert len(entries) == 5
@@ -351,7 +351,7 @@ class TestProcessRepository:
     @patch("fetch_rss.fetch_feed")
     def test_logs_error_on_failure(self, mock_fetch, mock_save_error):
         mock_fetch.side_effect = Exception("feedparser network error")
-        executed_at = datetime.now(tz=timezone.utc)
+        executed_at = datetime.now(tz=UTC)
         process_repository(1, "https://example.com/feed.xml", executed_at, {})
 
         mock_save_error.assert_called_once_with(1, "feedparser network error", executed_at)
@@ -360,7 +360,7 @@ class TestProcessRepository:
     @patch("fetch_rss.fetch_feed")
     def test_logs_error_when_no_entry(self, mock_fetch, mock_save_error):
         mock_fetch.return_value = (None, [])
-        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {})
+        process_repository(1, "https://example.com/feed.xml", datetime.now(tz=UTC), {})
         mock_save_error.assert_called_once()
 
     @patch("fetch_rss.save_error")
@@ -374,7 +374,7 @@ class TestProcessRepository:
             [{"version": "g", "title": "T", "link": "l", "summary": "", "published": None}],
         )
         mock_get_latest.return_value = None
-        process_repository(7, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {})
+        process_repository(7, "https://example.com/feed.xml", datetime.now(tz=UTC), {})
         mock_save_title.assert_called_once_with(7, "Le blog de Stéphane Robert")
 
     @patch("fetch_rss.save_error")
@@ -390,5 +390,5 @@ class TestProcessRepository:
             [{"version": "g", "title": "T", "link": "l", "summary": "", "published": None}],
         )
         mock_get_latest.return_value = None
-        process_repository(7, "https://example.com/feed.xml", datetime.now(tz=timezone.utc), {"title": "Same Title"})
+        process_repository(7, "https://example.com/feed.xml", datetime.now(tz=UTC), {"title": "Same Title"})
         mock_save_title.assert_not_called()
